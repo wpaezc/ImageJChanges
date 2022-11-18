@@ -923,56 +923,23 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		oldWidth = width;
 		oldHeight = height;
 	}
-
-	protected void moveHandle(int sx, int sy) {
-		double asp;
-		if (clipboard!=null) return;
-		int ox = ic.offScreenX2(sx);
-		int oy = ic.offScreenY2(sy);
-		if (ox<0) ox=0; if (oy<0) oy=0;
-		if (ox>xMax) ox=xMax; if (oy>yMax) oy=yMax;
-		int x1=x, y1=y, x2=x1+width, y2=y+height, xc=x+width/2, yc=y+height/2;
-		if (width > 7 && height > 7) {
-			asp = (double)width/(double)height;
-			asp_bk = asp;
-		} else
-			asp = asp_bk;
-
-		switch (activeHandle) {
-			case 0:
-				x=ox; y=oy;
-				break;
-			case 1:
-				y=oy;
-				break;
-			case 2:
-				x2=ox; y=oy;
-				break;
-			case 3:
-				x2=ox;
-				break;
-			case 4:
-				x2=ox; y2=oy;
-				break;
-			case 5:
-				y2=oy;
-				break;
-			case 6:
-				x=ox; y2=oy;
-				break;
-			case 7:
-				x=ox;
-				break;
-		}
+	
+	void widthMove( int x2) {
 		if (x<x2)
-		   width=x2-x;
+			width=x2-x;
 		else
-		  {width=1; x=x2;}
+			width=1;
+		    x=x2;
+	}
+	
+	void heightMove(int y2) {
 		if (y<y2)
-		   height = y2-y;
+			height = y2-y;
 		else
-		   {height=1; y=y2;}
-
+			{height=1; y=y2;}
+	}
+	
+	void moveOnCenter(int xc, int yc, int x2, int y2, boolean checkBounds) {
 		if (center) {
 			switch (activeHandle){
 				case 0:
@@ -1018,9 +985,57 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 				height=1;
 				y=y2=yc;
 			}
-			bounds = null;
+			if(checkBounds) {
+				bounds = null;
+			}
 		}
+	}
+	
+	protected void moveHandle(int sx, int sy) {
+		double asp;
+		if (clipboard!=null) return;
+		int ox = ic.offScreenX2(sx);
+		int oy = ic.offScreenY2(sy);
+		if (ox<0) ox=0; if (oy<0) oy=0;
+		if (ox>xMax) ox=xMax; if (oy>yMax) oy=yMax;
+		int x1=x, y1=y, x2=x1+width, y2=y+height, xc=x+width/2, yc=y+height/2;
+		if (width > 7 && height > 7) {
+			asp = (double)width/(double)height;
+			asp_bk = asp;
+		} else
+			asp = asp_bk;
 
+		switch (activeHandle) {
+			case 0:
+				x=ox; y=oy;
+				break;
+			case 1:
+				y=oy;
+				break;
+			case 2:
+				x2=ox; y=oy;
+				break;
+			case 3:
+				x2=ox;
+				break;
+			case 4:
+				x2=ox; y2=oy;
+				break;
+			case 5:
+				y2=oy;
+				break;
+			case 6:
+				x=ox; y2=oy;
+				break;
+			case 7:
+				x=ox;
+				break;
+		}
+		
+		widthMove(x2);
+		heightMove(y2);
+		moveOnCenter(xc, yc, x2, y2, true);
+		
 		if (constrain) {
 			if (activeHandle==1 || activeHandle==5)
 				width=height;
