@@ -443,7 +443,49 @@ public class AutoThresholder {
 		while ( Math.abs ( new_thresh - old_thresh ) > tolerance );
 		return threshold;
 	}
+	
+	int getFirstNonZeroBin(int ih, double [] P1)  {
+		int first_bin=0;
+		
+		for (ih = 0; ih < 256; ih++ ) {
+			if ( !(Math.abs(P1[ih])<2.220446049250313E-16)) {
+				first_bin = ih;
+				break;
+			}
+		}
+		
+		return first_bin;
+	}
+	
+	int getLastNonZeroBin(int ih, double [] P2, int first_bin)  {
+		int last_bin=0;
+		
+		for (ih = 255; ih >= first_bin; ih-- ) {
+			if ( !(Math.abs(P2[ih])<2.220446049250313E-16)) {
+				last_bin = ih;
+				break;
+			}
+		}
+		
+		return last_bin;
+	}
 
+	void setCalculatedNormalizedHIstogram(int ih, double [] P1, double [] P2, double [] norm_histo, int [] data) {
+		double total =0;
+		for (ih = 0; ih < 256; ih++ ) 
+			total+=data[ih];
+		
+		for (ih = 0; ih < 256; ih++ )
+			norm_histo[ih] = data[ih]/total;
+
+		P1[0]=norm_histo[0];
+		P2[0]=1.0-P1[0];
+		for (ih = 1; ih < 256; ih++ ){
+			P1[ih]= P1[ih-1] + norm_histo[ih];
+			P2[ih]= 1.0 - P1[ih];
+		}
+	}
+	
 	int MaxEntropy(int [] data ) {
 		// Implements Kapur-Sahoo-Wong (Maximum Entropy) thresholding method
 		// Kapur J.N., Sahoo P.K., and Wong A.K.C. (1985) "A New Method for
@@ -453,7 +495,7 @@ public class AutoThresholder {
 		// 06.15.2007
 		// Ported to ImageJ plugin by G.Landini from E Celebi's fourier_0.8 routines
 		int threshold=-1;
-		int ih, it;
+		int ih = 0, it;
 		int first_bin;
 		int last_bin;
 		double tot_ent;  /* total entropy */
@@ -464,37 +506,12 @@ public class AutoThresholder {
 		double [] P1 = new double[256]; /* cumulative normalized histogram */
 		double [] P2 = new double[256]; 
 
-		double total =0;
-		for (ih = 0; ih < 256; ih++ ) 
-			total+=data[ih];
+		setCalculatedNormalizedHIstogram(ih, P1, P2, norm_histo, data);
+		
+		first_bin= getFirstNonZeroBin(ih, P1);
+		
+		last_bin = getLastNonZeroBin(ih, P2, first_bin);
 
-		for (ih = 0; ih < 256; ih++ )
-			norm_histo[ih] = data[ih]/total;
-
-		P1[0]=norm_histo[0];
-		P2[0]=1.0-P1[0];
-		for (ih = 1; ih < 256; ih++ ){
-			P1[ih]= P1[ih-1] + norm_histo[ih];
-			P2[ih]= 1.0 - P1[ih];
-		}
-
-		/* Determine the first non-zero bin */
-		first_bin=0;
-		for (ih = 0; ih < 256; ih++ ) {
-			if ( !(Math.abs(P1[ih])<2.220446049250313E-16)) {
-				first_bin = ih;
-				break;
-			}
-		}
-
-		/* Determine the last non-zero bin */
-		last_bin=255;
-		for (ih = 255; ih >= first_bin; ih-- ) {
-			if ( !(Math.abs(P2[ih])<2.220446049250313E-16)) {
-				last_bin = ih;
-				break;
-			}
-		}
 
 		// Calculate the total entropy each gray-level
 		// and find the threshold that maximizes it 
@@ -1007,7 +1024,7 @@ public class AutoThresholder {
 		//  Image Thresholding" Graphical Models and Image Processing, 56(5): 414-419
 		// Ported to ImageJ plugin by G.Landini from E Celebi's fourier_0.8 routines
 		int threshold;
-		int ih, it;
+		int ih = 0, it;
 		int first_bin;
 		int last_bin;
 		double term;
@@ -1019,37 +1036,12 @@ public class AutoThresholder {
 		double [] P1 = new double[256]; /* cumulative normalized histogram */
 		double [] P2 = new double[256]; 
 
-		double total =0;
-		for (ih = 0; ih < 256; ih++ ) 
-			total+=data[ih];
-
-		for (ih = 0; ih < 256; ih++ )
-			norm_histo[ih] = data[ih]/total;
-
-		P1[0]=norm_histo[0];
-		P2[0]=1.0-P1[0];
-		for (ih = 1; ih < 256; ih++ ){
-			P1[ih]= P1[ih-1] + norm_histo[ih];
-			P2[ih]= 1.0 - P1[ih];
-		}
-
-		/* Determine the first non-zero bin */
-		first_bin=0;
-		for (ih = 0; ih < 256; ih++ ) {
-			if ( !(Math.abs(P1[ih])<2.220446049250313E-16)) {
-				first_bin = ih;
-				break;
-			}
-		}
-
-		/* Determine the last non-zero bin */
-		last_bin=255;
-		for (ih = 255; ih >= first_bin; ih-- ) {
-			if ( !(Math.abs(P2[ih])<2.220446049250313E-16)) {
-				last_bin = ih;
-				break;
-			}
-		}
+		setCalculatedNormalizedHIstogram(ih, P1, P2, norm_histo, data);
+	
+		first_bin= getFirstNonZeroBin(ih, P1);
+		
+		last_bin = getLastNonZeroBin(ih, P2, first_bin);
+		
 
 		// Calculate the total entropy each gray-level
 		// and find the threshold that maximizes it 
